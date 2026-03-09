@@ -45,16 +45,18 @@ class Browser:
     if self.last_url_req == url:
       return True
 
-    return self.get(url)
+    return self.get(url, username=self.config.username, password=self.config.password)
 
-  def get(self, url: str) -> bool:
-    """Load a URL in the webdriver.
+  def get(self, url: str, username: str = None, password: str = None) -> bool:
+    """Load a URL in the webdriver with optional basic authentication.
 
     Args:
-        url (str): url to load
+        url (str): URL to load.
+        username (str, optional): Username for basic auth. Defaults to None.
+        password (str, optional): Password for basic auth. Defaults to None.
 
     Returns:
-        bool: True if page loaded, False if something went wrong
+        bool: True if page loaded, False if something went wrong.
     """
     # If only_allow_https is set, check that the URL is HTTPS
     if self.config.only_allow_https and not url.startswith('https://'):
@@ -64,6 +66,11 @@ class Browser:
     for attempts in range(5):
       try:
         logger.info('Running .get: %s', url)
+        if username and password:
+            from urllib.parse import urlparse, urlunparse
+            parsed_url = urlparse(url)
+            auth_url = parsed_url._replace(netloc=f"{username}:{password}@{parsed_url.netloc}")
+            url = urlunparse(auth_url)
         self.driver.get(url)
         logger.info('.get successful')
         self.driver.set_script_timeout(self.config.script_timeout)

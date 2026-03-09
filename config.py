@@ -58,6 +58,8 @@ class Config:
   audit_plugins: dict[str, dict[str, Any]]
   record_unexpected_response_codes: bool
   force_open_details_elements: bool
+  username: str  # Username for basic authentication
+  password: str  # Password for basic authentication
 
   # Threading lock (shared amongst all threads)
   lock = threading.RLock()

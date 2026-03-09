@@ -234,6 +234,9 @@ def process_url_headers(config: Config, url: str, supports_head_requests: bool =
     try:
       # Set the user agent string
       ua_string = {'User-Agent': config.user_agent}
+      if config.username and config.password:
+          from requests.auth import HTTPBasicAuth
+          auth = HTTPBasicAuth(config.username, config.password)
       headers = requests.request(method, url, headers=ua_string, timeout=timeout, allow_redirects=True)
 
       # this response does not really make sense, but if it does happen we might as well skip remaining retries

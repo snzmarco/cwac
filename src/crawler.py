@@ -344,7 +344,7 @@ class Crawler:
     Returns:
         bool: True if URL has acceptable headers, else False
     """
-    ok_status_codes = [200, 301, 302, 307, 308]
+    ok_status_codes = [200, 301, 302, 307, 308, 401]
     if url_data['status_code'] not in ok_status_codes:
       logger.info(
         'URL filtered out due to bad http status_code: %s %i',
@@ -383,6 +383,9 @@ class Crawler:
     # Fetch the robots.txt file
     try:
       logger.info('Fetching robots.txt %s', robots_txt_url)
+      if self.config.username and self.config.password:
+          from requests.auth import HTTPBasicAuth
+          auth = HTTPBasicAuth(self.config.username, self.config.password)
       response = requests.get(robots_txt_url, headers={'User-Agent': self.config.user_agent}, timeout=10)
       response.raise_for_status()
 
