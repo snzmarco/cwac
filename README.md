@@ -2,13 +2,13 @@
 
 ![CWAC](/icons/logo.svg)
 
-CWAC is a project originally designed and developed by the Web Standards team within the Digital Public Service branch of <span lang="mi">Te Tari Taiwhenua</span> | Department of Internal Affairs, New Zealand Government.
+CWAC is designed and developed by the Web Standards team at <span lang="mi">Te Pūnaha Matihiko</span> | Government Digital Delivery Agency, New Zealand Government.
 
 **Note:** "CWAC" is pronounced "quack", like a duck.
 
 CWAC is a tool that can scan hundreds of websites for accessibility issues, automatically.
 
-CWAC can be used as a mechanism to monitor the New Zealand Government's implementation of minimum accessibility standards and guidelines on its websites. The primary standard, is the [NZ Government Web Accessibility Standard](https://www.digital.govt.nz/standards-and-guidance/nz-government-web-standards/web-accessibility-standard-1-1/), which includes [Web Content Accessibility Guidelines (WCAG) 2.1](https://www.w3.org/TR/WCAG21/) Level AA conformance. CWAC enables the partial fulfillment of [Article 9 of the United Nations Convention on the Rights of Persons with Disabilities (CRPD)](https://www.un.org/development/desa/disabilities/convention-on-the-rights-of-persons-with-disabilities/article-9-accessibility.html).
+CWAC can be used as a mechanism to monitor the New Zealand Government's implementation of minimum accessibility standards and guidelines on its websites. The primary standard, is the [NZ Government Web Accessibility Standard](https://www.digital.govt.nz/standards-and-guidance/nz-government-web-standards/web-accessibility-standard-1-2/), which includes [Web Content Accessibility Guidelines (WCAG) 2.2](https://www.w3.org/TR/WCAG22/) Level AA conformance. CWAC enables the partial fulfillment of [Article 9 of the United Nations Convention on the Rights of Persons with Disabilities (CRPD)](https://www.un.org/development/desa/disabilities/convention-on-the-rights-of-persons-with-disabilities/article-9-accessibility.html).
 
 Provided a list of URLS to visit, CWAC will check each page for automatically-identifiable accessibility issues and store the results in an easy-to-read CSV file.
 
@@ -78,7 +78,7 @@ If the paths cannot be determined automatically, you can pass them manually by:
    - for Linux x64, the `chrome_binary_location` could be: `./chrome/linux-114.0.5735.90/chrome-linux64/chrome`
 
 > [!NOTE]
-> 
+>
 > Pull requests improving the automatic detection to cover additional OSs and architectures are welcome
 
 #### Updating Chrome for Testing (optional)
@@ -146,7 +146,7 @@ Field descriptions:
 - `user_agent`
   - the user agent string CWAC will use for all network requests
 - `user_agent_product_token`
-  - the product token (should match the one in `user_agnet` used for robots.txt matching)
+  - the product token (should match the one in `user_agent` used for robots.txt matching)
 - `follow_robots_txt`
   - a bool, determines if robots.txt directives should be followed by CWAC
 - `script_timeout`
@@ -171,7 +171,7 @@ Field descriptions:
   - a path to a folder that contains CSV files (as many as you like). The CSV files **must** have the headers: organisation,url,sector.
   - The entries in `base_urls_visit_path` are extremely important, as these files are used to associate URLs with other information like their organisation, and sector
 - `base_urls_nohead_path`
-  - Defines which URLs don't support HEAD requests 
+  - Defines which URLs don't support HEAD requests
   - a path to a folder that contains CSV files (as many as you like). The CSV files **must** have only one header: url.
   - In cases where a HEAD request would be made CWAC will instead make a GET request
 - `force_open_details_elements`
@@ -228,21 +228,10 @@ python cwac.py config_a.json && python cwac.py config_b.json
 ### Results storage
 The raw test results are stored within the `./results/` folder.
 
-### Exporting reports from the raw data
-You can either use the raw data stored in teh `./results/` folder directly, or you can use a data exporting feature which auto-generates leaderboards, and runs an algorithm which attempts to de-duplicate axe-core issues.
-
-The CWAC data exporter is in the file `export_report_data.py`, and its configuration is in `export_report_data_config.json`.
-
-To use the CWAC data exporter, run `python export_report_data.py` and it will generate various leaderboard CSVs etc for the latest audit results, placing the output in `./reports/` in a directory with the same name as the results.
-
-You can also provide the name of a directory in the `./results` folder to generate the reports for older results.
-
 ## Checking CWAC's source code
 
 CWAC uses several tools to maintain the quality and integrity of its source code, including:
-- [ruff](https://github.com/astral-sh/ruff), an uncompromising code formatter
-- [pydocstyle](https://github.com/PyCQA/pydocstyle), for linting docstrings
-- [isort](https://github.com/pycqa/isort), for sorting import statements
+- [ruff](https://github.com/astral-sh/ruff), an uncompromising code formatter and linter
 - [bandit](https://github.com/PyCQA/bandit), for detecting potential security vulnerabilities
 - [flake8](https://github.com/pycqa/flake8), for linting
 - [pylint](https://github.com/PyCQA/pylint), for linting
@@ -255,7 +244,7 @@ Use `pre-commit run --all-files` to run all pre-commit hooks.
 ## Audit plugin architecture
 CWAC is designed to be extensible with plugins. This enables CWAC to run multiple different types of audits against web pages.
 
-By default, CWAC has 6 plugins:
+By default, CWAC has 8 plugins:
 - `DefaultAudit` - a plugin that simply gets basic page information e.g. viewport size, page title. This audit plugin is never used directly, it is always imported by other plugins so they don't have to fetch basic page information.
 - `AxeCoreAudit` - a plugin that runs `axe-core` on the page
 - `LanguageAudit` - a plugin that estimates text readability using a Flesch-Kincaid and SMOG score. It can also perform sentiment analysis.
@@ -263,6 +252,7 @@ By default, CWAC has 6 plugins:
 - `FocusIndicatorAudit` - a plugin that presses the tab key and detects if pixels changed after pressing tab, which can be an indicative test for WCAG 2.4.7 Focus Visible.
 - `ScreenshotAudit` - a plugin that simply takes screenshots of each web page tested and saves it to a folder in the results directory.
 - `ElementAudit` - a plugin that reports all instances of elements that match a CSS selector.
+- `TitleAudit` - a plugin that captures page titles to allow checking for uniqueness.
 
 The code for each plugin is located in `/src/audit_plugins/`
 
@@ -286,6 +276,10 @@ The format of `audit_plugin` entries requires a snake case name as the key, and 
         "enabled": true,
         "viewport_to_test": "small",
         "screenshot_failures": false
+    },
+    "title_audit": {
+        "class_name": "TitleAudit",
+        "enabled": true
     },
     "screenshot_audit": {
         "class_name": "ScreenshotAudit",
